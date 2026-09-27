@@ -1,0 +1,8 @@
+pymupdf>=1.28,<2
+pytest>=8
+pymilvus>=2.5.4,<2.6
+milvus-lite>=2.5.0
+sentence-transformers>=3,<6
+aiogram>=3.31,<4
+python-dotenv>=1,<2
+matplotlib>=3.8
