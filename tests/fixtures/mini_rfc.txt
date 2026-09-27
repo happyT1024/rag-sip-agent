@@ -1,0 +1,205 @@
+Mini RFC 4000: The Test Protocol
+
+
+
+
+Bernstein                Standards Track
+
+
+Status of this Memo
+
+   This memo defines a synthetic miniature RFC used by the chunker test
+   suite.  It exercises headers, footers, front matter, a table of
+   contents, numbered sections, an ABNF grammar block, a table, and the
+   service-part tail.  Distribution is unlimited.
+
+Abstract
+
+   This document defines the FOO method for the Test Protocol used to
+   validate offline text chunking without network or model access.
+
+%%PAGE%%
+RFC 4000                    The Test Protocol                June 2002
+
+Table of Contents
+
+   1    Introduction
+   ..........................................    2
+   1.1  Scope . . . . . . . . . . . . . . . . . . . . . . . .     2
+   2    The Foo Method ........................................    2
+   2.1  Request Body ..........................................    4
+   3    References ............................................    7
+   4    Acknowledgments .......................................    8
+        Full Copyright Statement ..............................    8
+
+Bernstein                Standards Track                     [Page 2]
+
+%%PAGE%%
+RFC 4000                    The Test Protocol                June 2002
+
+1 Introduction
+
+   The Test Protocol carries fictional signaling between two synthetic
+   endpoints.  This introduction exists so that the cleaner has a
+   realistic body-start anchor after the front matter blocks.
+
+   It also provides enough surrounding prose that chunk boundaries fall
+   between paragraphs rather than inside them.
+
+1.1 Scope
+
+   This miniature document covers only the FOO method.  This section is
+   deliberately short so that it merges into a neighboring chunk per
+   the minimum-size rule.
+
+2 The Foo Method
+
+   The FOO method carries application level information along the
+   signaling path of an established dialog.  It never changes the
+   dialog state itself and it never affects the session description.
+
+   A FOO request may be sent inside an early dialog or a confirmed
+   dialog.  The recipient answers it with a final response and the
+   transaction finishes without any effect on the media streams.
+
+   Senders of FOO requests include an Allow header listing FOO in
+   every request they emit.  Recipients that do not understand the
+   method answer with a 501 response as the base specification says.
+
+Bernstein                Standards Track                     [Page
+3]
+
+%%PAGE%%
+RFC 4000                    The Test Protocol                June
+2002
+
+9 This quoted example heading only looks like a section of the
+document but the section counter never reached nine so the parser
+demotes the whole line to plain body text of the current section.
+
+   Full Copyright Statement
+
+   The example block above quotes a boilerplate heading from the
+   middle of the document.  It must not trigger the service tail cut
+   because the tail cut only considers the last quarter of pages.
+
+   The FOO method reuses the transaction machinery of the base
+   protocol.  Proxies forward FOO requests statelessly and they never
+   need to inspect the body of the request at all.
+
+Bernstein                Standards Track                     [Page
+4]
+
+%%PAGE%%
+RFC 4000                    The Test Protocol                June 2002
+
+   The grammar of the method is specified below in ABNF.  The rule
+   must never be split across two chunks because parsers need it as a
+   unit.  The rule text is intentionally surrounded by enough prose
+   that whichever way the paragraphs pack, the grammar lines share a
+   chunk with at least one full paragraph on each side of the block.
+
+      Foo =  ( "FOO" / "f" ) HCOLON foo-param
+             / "BAR"
+             ; the foo-param follows the HTTP rules
+
+   The table below lists the header fields of the method.  It must
+   stay atomic as well because column readers scan it as one block.
+
+   Header field          where       proxy
+   Foo                   R           opt
+   Bar                   R           opt
+
+   Implementations that support the extension report it in a
+   Supported header.  Implementations that do not support it simply
+   ignore FOO requests and answer them with a final rejection code.
+
+   Implementations that support the extension also advertise it in a
+   Allow header listing the method.  The method is midpoint safe and
+   it may be issued by either side of the dialog at any time.
+
+   Proxies that receive a FOO request for an unknown dialog target
+   forward it along the route set without inspecting it.  This keeps
+   the method compatible with stateless intermediate elements and it
+   avoids any need for midpoint transaction state to be allocated.
+
+   Endpoints should rate limit FOO requests to avoid flooding their
+   peer with application payloads.  A sender that exceeds the peer's
+   declared capacity receives a congestion signal and must back off.
+
+2.1 Request Body of Foo
+
+   The body of a FOO request carries a plain text payload whose media
+   type is text/foo.  The payload is opaque to the protocol itself.
+
+   Bodies larger than a single transport frame are fragmented by the
+   layer below and reassembled before delivery to the application.
+
+Bernstein                Standards Track                     [Page
+5]
+
+%%PAGE%%
+RFC 4000                    The Test Protocol                June 2002
+
+7.  Bogus list item that only looks like a top level heading and
+must therefore be demoted to plain body text by the sequence-aware
+parser because the section counter never reached seven.
+
+2.99.  Bogus subsection without an open parent section and it must
+also be demoted to plain body text for the same sequence reason.
+
+Bernstein                Standards Track                     [Page
+6]
+
+%%PAGE%%
+RFC 4000                    The Test Protocol                June 2002
+
+3 References
+
+   [1]  Bernstein, D., "The Test Protocol Base Specification",
+        RFC 4000, June 2002.
+
+   [2]  Mankin, A., "Design Notes for Lightweight Signaling",
+        RFC 4001, May 2002.
+
+   [3]  Roe, M., "Security Review of Lightweight Signaling Methods",
+        RFC 4002, April 2002.
+
+Bernstein                Standards Track                     [Page
+7]
+
+%%PAGE%%
+RFC 4000                    The Test Protocol                June 2002
+
+Appendix A Test Appendices
+
+   This appendix collects the auxiliary material of the specification.
+   It lists the known implementation quirks reported by early
+   implementers and it explains how the conformance suite exercises
+   each of them in isolation before the interop events.
+
+Appendix A.1 Collecting Details
+
+   The collection procedure starts with a plain text transcript of the
+   signaling exchange.  The transcript is annotated with the detected
+   quirks, and every annotation refers to the section of the base
+   specification that defines the expected behavior for the exchange.
+
+4 Acknowledgments
+
+   The working group members listed in the discussion archive
+   provided extensive review of earlier versions of this document.
+
+Authors' Addresses
+
+   D. Bernstein
+   Test University
+   EMail: db@test.example
+
+Full Copyright Statement
+
+   Copyright (C) The Internet Society 2002.  All Rights Reserved.
+   This document and translations of it may be copied and furnished.
+
+Bernstein                Standards Track                     [Page
+8]
