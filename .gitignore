@@ -1,0 +1,33 @@
+# Secrets — never commit (grading fails if a key appears anywhere in history)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+
+# BMad process artifacts (tooling, not deliverables)
+_bmad/
+_bmad-output/
+
+# Derived RAG artifacts (regenerable)
+data/processed/
+data/cache/
+problem/data/
+
+# Vector store / Milvus data
+milvus/
+data/milvus/
+volumes/
+
+# Chat journal
+journal/
+*.journal.jsonl
