@@ -67,7 +67,35 @@ Milvus Lite: `.venv/bin/python -m vectorstore.ingest --uri ./milvus_lite.db`
 Выбор k для генерации: **k=5** — recall выходит на плато (0.850), а k=10
 добавляет лишь +0.05 ценой вдвое большего шума в контексте.
 
-### 5. Тесты
+### 5. Генерация и бенчмарк (тратит деньги OpenRouter)
+
+```bash
+.venv/bin/python -m benchmark.run            # 50 вопросов x 5 конфигураций + judge
+.venv/bin/python -m benchmark.report         # таблицы + reports/money_chart.png
+```
+
+Модели: cheap = `openai/gpt-4o-mini`, mid = `google/gemini-2.5-flash`,
+strong = `openai/gpt-4.1`; judge — cheap. Прогон обошёлся в ~$0.14 при
+бюджет-стопе $1.50 (клавиша бюджета — `--budget`). Прогон чекпоинтируется
+после каждого ответа (`reports/benchmark_results.jsonl`), перезапуск
+продолжает, а не платит заново.
+
+Результаты (40 ответимых + 10 неотвечаемых):
+
+| Конфигурация | Доля верных | Цена вопроса | Цена верного ответа |
+|---|---|---|---|
+| сильная модель, без инструментов | 65.00% | $0.0004 | $0.0008 |
+| дешёвая модель, без инструментов | 55.00% | $0.0000 | $0.0001 |
+| дешёвая модель, RAG всегда | **95.00%** | $0.0003 | **$0.0004** |
+| дешёвая модель, агент с knowledge_base | 90.00% | $0.0005 | $0.0008 |
+| средняя модель, RAG всегда | 92.50% | $0.0008 | $0.0011 |
+
+Тезис курса подтверждён: дешёвая модель с RAG обгоняет сильную без инструментов
+и стоит вдвое дешевле за верный ответ. Отказы: RAG-конфигурации честно отклоняют
+10/10 неотвечаемых (0 ложных отказов); без инструментов модель выдумывает 9-10 из 10.
+Разбор провалов — `reports/failures.md`, график — `reports/money_chart.png`.
+
+### 6. Тесты
 
 ```bash
 .venv/bin/python -m pytest tests/ -q
@@ -76,12 +104,35 @@ Milvus Lite: `.venv/bin/python -m vectorstore.ingest --uri ./milvus_lite.db`
 Тесты гоняются на Milvus Lite с фейковым эмбеддером: без docker, без скачивания
 модели, без ключа, без LLM.
 
+### 7. Telegram-бот
+
+```bash
+.venv/bin/python -m bot
+```
+
+- Обязателен только `TELEGRAM_BOT_TOKEN` (от @BotFather) — без него бот
+  завершается с понятной ошибкой.
+- `AGENT_BACKEND=fake` — бесплатный живой прогон: бот отвечает заглушкой
+  с цитатой, расходы $0.
+- `AGENT_BACKEND=openrouter` — настоящий RAG-агент; дополнительно требуются:
+  `OPENROUTER_API_KEY` в `.env`, запущенный Milvus (`docker compose up -d`)
+  и загруженная коллекция (`python -m vectorstore.ingest`). Расходы
+  ограничивают `SPEND_CAP_USD` (журнал бота) и `OPENROUTER_BUDGET_USD`
+  (жёсткий стоп клиента на процесс).
+- Лимиты и адрес Milvus (`MILVUS_URI`, `AGENT_MODEL`, бюджет) задаются
+  в `.env` — см. комментарии в `.env.example`.
+- Команды: `/start`, `/help` — справка; `/reset` — очищает историю
+  диалога только этого чата.
+
 ## Структура
 
 ```
 chunker/       нарезка PDF: naive (окно) + structural (по секциям RFC)
 vectorstore/   эмбеддинги с кэшем + инжест в Milvus
 retrieval/     скоринг (recall@k, MRR, RRF), BM25, замер и гибрид
+agent/         агентное ядро: tool-use цикл + адаптер AgentPort для бота
+bot/           Telegram-бот: middleware-конвейер, порт агента, рендеринг
+journal/       локальное состояние бота (сессии, журнал расходов), в .gitignore
 data/          корпус PDF; data/processed — нарезки; data/cache — кэш эмбеддингов
 problem/       spec, лекции, чужие скрипты (не наш пайплайн)
 ```

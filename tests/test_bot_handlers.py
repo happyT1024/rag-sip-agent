@@ -6,21 +6,18 @@ FakeAgent and an in-memory SessionStore. No network, no keys, no LLM.
 
 from __future__ import annotations
 
-from bot.fakes import FakeAgent
 from bot.handlers import MSG_ONBOARDING, MSG_RESET
 from bot.port import HistoryItem
-from bot.sessions import MemorySessionStore
-from bot.spend import SpendJournal
 from conftest import (
     CHAT_ID,
     OTHER_CHAT_ID,
+    build_setup,
     build_test_dispatcher,
     feed,
     make_bot,
     run,
     sent_texts,
 )
-from test_bot_pipeline import build_setup
 
 
 def test_start_replies_onboarding_without_agent_call(tmp_path) -> None:

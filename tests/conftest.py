@@ -30,14 +30,23 @@ from chunker.clean import clean_pages
 from chunker.extract import clean_page_lines
 from chunker.schemas import Page
 
+from bot.config import BotConfig
+from bot.fakes import FakeAgent
+from bot.port import Source
+from bot.sessions import MemorySessionStore
+from bot.spend import SpendJournal
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 FIXTURE = REPO_ROOT / "tests" / "fixtures" / "mini_rfc.txt"
 RFC = 4000
 TITLE = "The Test Protocol"
 
-BOT_TOKEN = "42:TEST"
+BOT_TOKEN = "42:AbCdEfGhIjKlMnOpQrStUv"
 CHAT_ID = 100
 OTHER_CHAT_ID = 200
+
+_MESSAGE_IDS = count(1)
+_UPDATE_IDS = count(1)
 
 
 def run(coro: Any) -> Any:
@@ -88,7 +97,7 @@ def make_bot() -> tuple[Bot, MockSession]:
 
 def make_message(text: str, chat_id: int = CHAT_ID) -> Message:
     return Message(
-        message_id=next(count(1)),
+        message_id=next(_MESSAGE_IDS),
         date=datetime.now(timezone.utc),
         chat=Chat(id=chat_id, type="private"),
         from_user=User(id=chat_id, is_bot=False, first_name="Test"),
@@ -97,7 +106,7 @@ def make_message(text: str, chat_id: int = CHAT_ID) -> Message:
 
 
 def make_update(message: Message) -> Update:
-    return Update(update_id=next(count(1)), message=message)
+    return Update(update_id=next(_UPDATE_IDS), message=message)
 
 
 async def feed(dp: Dispatcher, bot: Bot, text: str, chat_id: int = CHAT_ID) -> None:
@@ -115,6 +124,31 @@ def build_test_dispatcher(
     from bot.__main__ import build_dispatcher
 
     return build_dispatcher(config, agent, sessions=sessions, spend=spend)
+
+
+def make_config(**overrides) -> BotConfig:
+    defaults = dict(
+        token=BOT_TOKEN,
+        backend="fake",
+        spend_cap_usd=10.0,
+        rate_limit_per_minute=5,
+        max_question_chars=1000,
+        agent_timeout_seconds=120.0,
+        agent_error_fallback_cost_usd=0.01,
+    )
+    defaults.update(overrides)
+    return BotConfig(**defaults)
+
+
+def build_setup(tmp_path: Path, **config_overrides):
+    """(config, agent, sessions, spend) wired like production, all in-memory."""
+    config = make_config(**config_overrides)
+    # Small delay so ChatActionSender's worker gets a loop iteration to send
+    # the typing action before the (instant) fake answer resolves.
+    agent = FakeAgent(sources=[Source(rfc=3261, section="4.1", page=12)], delay=0.01)
+    sessions = MemorySessionStore()
+    spend = SpendJournal(tmp_path / "spend.jsonl")
+    return config, agent, sessions, spend
 
 
 def _fixture_pages() -> list[str]:

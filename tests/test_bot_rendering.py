@@ -113,3 +113,30 @@ def test_render_answer_citations_get_own_part_when_last_part_is_full() -> None:
 def test_render_answer_no_sources_omits_citation_block() -> None:
     answer = Answer(text="Ответ без источника.", sources=[], cost_usd=0.0)
     assert render_answer(answer) == ["Ответ без источника."]
+
+
+def test_render_answer_empty_text_with_sources_sends_citations_only() -> None:
+    answer = Answer(text="", sources=[Source(rfc=3261, section="4.1", page=12)],
+                    cost_usd=0.0)
+    parts = render_answer(answer)
+    assert parts == ["Источники:\n— RFC 3261 §4.1 p.12"]
+    assert all(parts)
+
+
+def test_render_answer_fully_empty_yields_nonempty_placeholder() -> None:
+    assert render_answer(Answer(text="", sources=[], cost_usd=0.0)) == [
+        "(получен пустой ответ)"
+    ]
+
+
+def test_render_answer_oversized_citations_are_split_too() -> None:
+    sources = [Source(rfc=3261, section="1." + "0" * 30 + str(i), page=i)
+               for i in range(60)]
+    answer = Answer(text="короткий", sources=sources, cost_usd=0.0)
+
+    parts = render_answer(answer)
+
+    assert all(len(p) <= TELEGRAM_MESSAGE_LIMIT for p in parts)
+    assert all(parts), "no part may be empty"
+    assert "короткий" in parts[0]
+    assert parts[-1].startswith("—") or "Источники" in parts[0]
