@@ -231,16 +231,17 @@ def test_exact_refusal_yields_no_sources(agent) -> None:
     assert out.sources == []
 
 
-def test_refusal_with_extra_text_is_an_answer(agent) -> None:
+def test_wrapped_refusal_is_normalized_without_sources(agent) -> None:
     _script(
         agent,
         [
             Reply(content="", tool_calls=[_tc()]),
-            Reply(content=f"{REFUSAL} Уточните вопрос."),
+            Reply(content=f"Определение не найдено. {REFUSAL} Уточните запрос."),
         ],
     )
     out = asyncio.run(agent.ask("вопрос", []))
-    assert out.sources == [TOP_HIT]
+    assert out.text == REFUSAL, "wrapped refusal normalizes to the exact phrase"
+    assert out.sources == []
 
 
 def test_kb_found_nothing_answer_sent_as_is(tmp_path) -> None:

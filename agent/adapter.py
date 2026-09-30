@@ -77,9 +77,14 @@ class OpenRouterAgent:
             max_steps=self.max_steps,
             history=[{"role": h.role, "content": h.text} for h in history],
         )
+        text = out["answer"]
+        # The model may wrap the refusal phrase in its own words; normalize so
+        # a refusal never carries a contradictory "Источники" block.
+        if REFUSAL in text:
+            text = REFUSAL
         return Answer(
-            text=out["answer"],
-            sources=self._sources_for(out["answer"], calls),
+            text=text,
+            sources=self._sources_for(text, calls),
             cost_usd=out["cost_usd"],
         )
 
