@@ -13,6 +13,7 @@ from bot.rendering import (
     format_source,
     render_answer,
     split_text,
+    strip_markdown,
 )
 
 LONG = TELEGRAM_MESSAGE_LIMIT
@@ -140,3 +141,21 @@ def test_render_answer_oversized_citations_are_split_too() -> None:
     assert all(parts), "no part may be empty"
     assert "короткий" in parts[0]
     assert parts[-1].startswith("—") or "Источники" in parts[0]
+
+
+def test_strip_markdown_bold_heading_code_bullets() -> None:
+    text = "**Заголовок**\n* пункт один\n* пункт два\n`INVITE` метод и [1] ссылка"
+    out = strip_markdown(text)
+    assert "**" not in out and "`" not in out and "#" not in out
+    assert "Заголовок" in out
+    assert "[1]" in out, "citation markers must survive"
+    assert "• пункт один" in out
+    assert "INVITE метод" in out
+
+
+def test_render_answer_applies_markdown_strip() -> None:
+    answer = Answer(text="**Ответ** про RFC [1].", sources=[], cost_usd=0.0)
+    parts = render_answer(answer)
+    joined = "\n".join(parts)
+    assert "**" not in joined
+    assert "Ответ про RFC [1]." in joined

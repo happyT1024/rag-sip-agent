@@ -9,9 +9,33 @@ is never cut in half.
 
 from __future__ import annotations
 
+import re
+
 from bot.port import Answer, Source
 
 TELEGRAM_MESSAGE_LIMIT = 4096
+
+# Telegram messages are sent without parse_mode, so model-produced Markdown
+# would show up as literal asterisks/backticks. Strip it deterministically.
+_BOLD_RE = re.compile(r"\*\*([^*]+)\*\*|__([^_]+)__")
+_CODE_RE = re.compile(r"`([^`]*)`")
+_HEADING_RE = re.compile(r"(?m)^\s{0,3}#{1,6}\s+")
+_BULLET_RE = re.compile(r"(?m)^(\s*)\*\s+")
+_ITALIC_RE = re.compile(r"(?<![\w*])\*([^*\n]+)\*(?![\w*])")
+
+
+def strip_markdown(text: str) -> str:
+    """Render Markdown-ish markup as readable plain text.
+
+    Citations (``[n]``), identifiers and single underscores are preserved;
+    ``* item`` bullets become ``• item``.
+    """
+    text = _BOLD_RE.sub(lambda m: m.group(1) or m.group(2), text)
+    text = _CODE_RE.sub(r"\1", text)
+    text = _HEADING_RE.sub("", text)
+    text = _BULLET_RE.sub(r"\1• ", text)
+    text = _ITALIC_RE.sub(r"\1", text)
+    return text
 
 
 def format_source(source: Source) -> str:
@@ -54,7 +78,7 @@ def render_answer(answer: Answer, limit: int = TELEGRAM_MESSAGE_LIMIT) -> list[s
     Empty body parts are dropped; if nothing remains, the citations alone
     (or a placeholder) are sent — Telegram rejects empty messages.
     """
-    parts = [part for part in split_text(answer.text, limit) if part]
+    parts = [part for part in split_text(strip_markdown(answer.text), limit) if part]
     if answer.sources:
         citation_parts = split_text(format_citations(answer.sources), limit)
         if parts and len(parts[-1]) + 2 + len(citation_parts[0]) <= limit:
